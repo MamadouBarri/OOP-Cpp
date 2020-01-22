@@ -2,6 +2,7 @@
 #include <iostream>
 #include <memory>
 #include <algorithm>
+#include <vector>
 
 using namespace std;
 class Matrice {
@@ -14,11 +15,11 @@ public:
     int getLargeur() const;
     void changerDimensions(int hauteur, int largeur);
 private:
-    double& accederInterne(int ligne, int colonne) const;
+    int accederInterne(int ligne, int colonne) const;
     int hauteur_;
     int largeur_;
     //lorsque l'objet est const on peut modifier les valeurs pointe mais pas le pointeur 
-    unique_ptr<double[]> valeurs_;//
+    vector<double> valeurs_;//
 };
 
 void Matrice::changerDimensions(int hauteur, int largeur) 
@@ -41,15 +42,15 @@ int Matrice::getLargeur() const {
     return largeur_;
 }
 
-Matrice::Matrice(int hauteur, int largeur) : 
+Matrice::Matrice(int hauteur, int largeur) :
     hauteur_(hauteur),
     largeur_(largeur),
-    valeurs_(make_unique<double[]>(hauteur_ * largeur_))
+    valeurs_(hauteur_* largeur_)
 {
 }
 
-double& Matrice::accederInterne(int ligne, int colonne) const {
-    return valeurs_[ligne * largeur_ + colonne];
+int Matrice::accederInterne(int ligne, int colonne) const {
+    return (ligne * largeur_ + colonne);
 }
 
 const double& Matrice::acceder(int ligne, int colonne) const {
@@ -57,7 +58,7 @@ const double& Matrice::acceder(int ligne, int colonne) const {
 }
 
 double& Matrice::acceder(int ligne, int colonne) {
-    return accederInterne(ligne, colonne);
+    return valeurs_[accederInterne(ligne, colonne)];
 }
 
 void afficherValeurMatrice(const Matrice& matrice) {
@@ -69,6 +70,8 @@ void modifierMatrice(Matrice& matrice) {
     //puisque cest une copie qui se termine dans le bloc -> le destructeur est appele pour matrice donc desalloue
 }
 
+
+//copie automatiquement le vecteur
 void calculer(Matrice matrice) {
     matrice.acceder(2, 5) += 100;
     cout << matrice.acceder(2, 5) << endl;
@@ -92,10 +95,10 @@ int main()
     modifierMatrice(matrice);
     afficherValeurMatrice(matrice);
     //un move implicite est fait a chaque fois puisquon ne va pas lacceder une autre fois : return et passage par parametres sont des move explicite meme avec un shared pointer -- > depend pas du type
-    calculer(copierMatrice(matrice));
+    calculer(matrice);
     cout << matrice.acceder(2, 5 ) << endl;
-    matrice.changerDimensions(5, 2);
-    cout << matrice.acceder(3, 2) << endl;
+    matrice.changerDimensions(5, 6);
+    cout << matrice.acceder(2, 5) << endl;
     //ici le destructeur est encore appelle et donc on desalloue de la memoire deja desalloue
 }
 
