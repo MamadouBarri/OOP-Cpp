@@ -41,10 +41,10 @@ Fraction& Fraction::simplifier() {
 
 }
 
-Fraction Fraction::operator+(const long& entier) const
-{
-	return Fraction(numerateur_ + entier * denominateur_, denominateur_);
-}
+//Fraction Fraction::operator+(const long& entier) const
+//{
+//	return Fraction(numerateur_ + entier * denominateur_, denominateur_);
+//}
 
 std::ostream& operator<<(std::ostream& o, const Fraction& f) {
 	o << f.numerateur_ << "/" << f.denominateur_;

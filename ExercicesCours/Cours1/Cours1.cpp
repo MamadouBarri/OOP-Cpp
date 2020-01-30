@@ -3,23 +3,32 @@
 #include <memory>
 #include <algorithm>
 #include <vector>
+#include <assert.h>
 
 using namespace std;
 class Matrice {
 public:
     Matrice(int hauteur = 0, int largeur = 0);
+    Matrice(const Matrice& mat);
     const double& acceder(int ligne, int colonne) const;
     double& acceder(int ligne, int colonne);
+
+    const double& operator()(int ligne, int colonne) const;
+    double& operator()(int ligne, int colonne);
+
         //getters
     int getHauteur() const;
     int getLargeur() const;
     void changerDimensions(int hauteur, int largeur);
+    Matrice operator+ (const Matrice& a) const;
+    Matrice& operator=(const Matrice& autre);
+    Matrice& operator=(Matrice&& autre);
 private:
     int accederInterne(int ligne, int colonne) const;
     int hauteur_;
     int largeur_;
     //lorsque l'objet est const on peut modifier les valeurs pointe mais pas le pointeur 
-    vector<double> valeurs_;//
+    std::unique_ptr<double[]> valeurs_;//
 };
 
 void Matrice::changerDimensions(int hauteur, int largeur) 
@@ -34,6 +43,52 @@ void Matrice::changerDimensions(int hauteur, int largeur)
     //la copie est detrurie a la fin de laccolade car variable locale
 }
 
+
+void afficherAddition(const Matrice& a, const Matrice& b)
+{
+
+}
+
+Matrice Matrice::operator+(const Matrice& b) const 
+{
+    assert(largeur_ == b.largeur_ && hauteur_ == b.hauteur_);
+    Matrice nouvelleMatrice = Matrice(hauteur_, largeur_);
+    const Matrice& a = *this;
+    for (int hauteur = 0; hauteur < hauteur_; hauteur++)
+        for (int largeur = 0; largeur < largeur_; largeur++)
+            nouvelleMatrice(hauteur, largeur) = a(hauteur, largeur) + b(hauteur, largeur);
+    return nouvelleMatrice;
+        
+}
+
+Matrice& Matrice::operator=(const Matrice& autre)
+{
+    if (this != &autre)
+    {
+        assert(hauteur_ == autre.hauteur_ && largeur_ == autre.largeur_ && "Les tailles des matrices doivent etre identiques");
+        Matrice copie(autre.getHauteur(), autre.getLargeur());
+        for (int i = 0; i < hauteur_ * largeur_; i++)
+        {
+            valeurs_[i] = autre.valeurs_[i];
+        }
+    }
+    return *this;
+}
+
+Matrice& Matrice::operator=(Matrice&& autre)
+{
+    if (this != &autre)
+    {
+        assert(hauteur_ == autre.hauteur_ && largeur_ == autre.largeur_ && "Les tailles des matrices doivent etre identiques");
+        Matrice copie(autre.getHauteur(), autre.getLargeur());
+        for (int i = 0; i < hauteur_ * largeur_; i++)
+        {
+            valeurs_[i] = autre.valeurs_[i];
+        }
+    }
+    return *this;
+}
+
 int Matrice::getHauteur() const {
     return hauteur_;
 }
@@ -45,13 +100,31 @@ int Matrice::getLargeur() const {
 Matrice::Matrice(int hauteur, int largeur) :
     hauteur_(hauteur),
     largeur_(largeur),
-    valeurs_(hauteur_* largeur_)
+    valeurs_(std::make_unique<double[]>(hauteur_* largeur_))
 {
 }
 
-int Matrice::accederInterne(int ligne, int colonne) const {
-    return (ligne * largeur_ + colonne);
+Matrice::Matrice(const Matrice& mat) : Matrice(mat.largeur_, mat.hauteur_)
+{
+    for (int i = 0; i < largeur_ * hauteur_; i++)
+        valeurs_[i] = mat.valeurs_[i];
 }
+
+int Matrice::accederInterne(int ligne, int colonne) const {
+    return valeurs_[ligne * largeur_ + colonne];
+}
+
+ostream& operator<< (ostream& o, const Matrice& m)
+{
+    for (int i = 0; i < m.getHauteur(); i++) {
+        for (int j = 0; j < m.getLargeur(); j++) {
+            o << m.acceder(i, j) << " ";
+        }
+    o << endl;
+    }
+    return o;
+}
+
 
 const double& Matrice::acceder(int ligne, int colonne) const {
     return accederInterne(ligne, colonne);
@@ -59,6 +132,16 @@ const double& Matrice::acceder(int ligne, int colonne) const {
 
 double& Matrice::acceder(int ligne, int colonne) {
     return valeurs_[accederInterne(ligne, colonne)];
+}
+
+const double& Matrice::operator()(int ligne, int colonne) const
+{
+    return acceder(ligne, colonne);
+}
+
+double& Matrice::operator()(int ligne, int colonne)
+{
+    return acceder(ligne, colonne);
 }
 
 void afficherValeurMatrice(const Matrice& matrice) {
@@ -89,16 +172,16 @@ Matrice copierMatrice(const Matrice& matrice){
 
 int main()
 {
-    Matrice matrice(20,30);
-    matrice.acceder(2, 5) = 4;
-    matrice.acceder(3, 2) = 120;
-    modifierMatrice(matrice);
-    afficherValeurMatrice(matrice);
-    //un move implicite est fait a chaque fois puisquon ne va pas lacceder une autre fois : return et passage par parametres sont des move explicite meme avec un shared pointer -- > depend pas du type
-    calculer(matrice);
-    cout << matrice.acceder(2, 5 ) << endl;
-    matrice.changerDimensions(5, 6);
-    cout << matrice.acceder(2, 5) << endl;
+    Matrice b(7, 8);
+    Matrice matrice(7, 8);
+    Matrice c(7, 8);
+    
+    //affectation entre des objets
+    c = b;
+    cout << c << endl;
+    matrice(1,1) = 5;
+    matrice(3, 3) = 5;
+    std::cout << matrice + b << endl;
     //ici le destructeur est encore appelle et donc on desalloue de la memoire deja desalloue
 }
 
